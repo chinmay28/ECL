@@ -1,37 +1,32 @@
-﻿words := RECORD
-	STRING1 alpha;
+﻿Word := RECORD
+	UNSIGNED Id;
+	STRING Alphabet;
 END;
 
-SET OF STRING1 alphabets:= ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 
-'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+INTEGER NO_OF_WORDS := 100;
+INTEGER ALPHA_MAX := 26;
+INTEGER ASCII_MIN := 65;
+INTEGER LENGTH_OF_WORD := 30;
 
-no_of_alphabets := COUNT(alphabets);
-word := DATASET([{'x'}], words);
-max_length := 20;
-
-words generate_alpha := TRANSFORM
-  SELF.alpha := 'X';
+Word Generate_Alphabet(Word L, INTEGER C) := TRANSFORM
+	SELF.Id := C;
+	SELF.Alphabet := '';
 END;
 
-words tAlpha(words L) := TRANSFORM
-	SELF.alpha := alphabets[RANDOM()%no_of_alphabets];
+Word Generate_More_Alphabet(Word L):= TRANSFORM
+	SELF.Id := L.Id;
+	SELF.Alphabet := TRIM((>STRING1<)(RANDOM() % ALPHA_MAX + ASCII_MIN));
 END;
 
-
-// Generate a string of 'x' with random length
-case_alpha := NORMALIZE(word, RANDOM()%max_length, generate_alpha);
-
-OUTPUT(PROJECT(case_alpha, tAlpha(LEFT)));
-
-
-/*
-words generate:= TRANSFORM
-  case_alpha := NORMALIZE(word, RANDOM()%max_length, generate_alpha);
-	SELF.alpha := PROJECT(case_alpha, tAlpha(LEFT));
+Word Merge_Alphabets(Word L, Word R):= TRANSFORM
+	SELF.Id := L.Id;
+	SELF.Alphabet := L.Alphabet + R.Alphabet;
 END;
 
-C := 100;
-list_of_words := NORMALIZE(word, C, generate);
-OUTPUT(list_of_words);
-*/
+Words1 := NORMALIZE(DATASET([{1, 0}], Word), NO_OF_WORDS, Generate_Alphabet(LEFT, COUNTER));
+OUTPUT(Words1, NAMED('Words1'));
+Words2 := NORMALIZE(Words1, RANDOM()%LENGTH_OF_WORD + 1, Generate_More_Alphabet(LEFT));
+OUTPUT(Words2, NAMED('Words2'));
+Words3 := ROLLUP(Words2, LEFT.Id = RIGHT.Id, Merge_Alphabets(LEFT, RIGHT));
+OUTPUT(Words3, NAMED('Words3'));
 
