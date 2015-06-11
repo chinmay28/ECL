@@ -20,6 +20,7 @@ END;
 
 // Generate a string of 'x' with random length
 case_alpha := NORMALIZE(word, RANDOM()%max_length, generate_alpha);
+
 OUTPUT(PROJECT(case_alpha, tAlpha(LEFT)));
 
 
