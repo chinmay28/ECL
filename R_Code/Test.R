@@ -1,29 +1,48 @@
-#source("ML10_RandomForest_UsageExample_iris.r")
-data(iris)
-
 run_randomForest <- function(indep,dep){
-  my.randomForest <- randomForest(x=indep,y=dep, importance=TRUE, proximity=TRUE, ntree=50,mtry=3)
-  my.randomForest.predict <- predict(my.randomForest, indep)
   
+  # To use 66% of the total data as training and rest as testing
+  
+  split_index <- as.integer(nrow(indep) * 0.66)
+  
+  training.indep <- indep[1:split_index,]
+  training.dep <- dep[1:split_index]
+  
+  testing.indep <- indep[split_index:nrow(indep),]
+  testing.dep <- dep[split_index:nrow(indep)]
+  
+  
+  # From http://tinyurl.com/TH-RF-Example 
+  my.randomForest <- randomForest(x=training.indep,y=training.dep, importance=TRUE, proximity=TRUE, ntree=25,mtry=4)
+  my.randomForest.predict <- predict(my.randomForest, testing.indep)
   len.randomForest.predict <- length(my.randomForest.predict)
+  
   my.randomForest.result <- vector()
   my.randomForest.matches <- 0
+  
   for ( i in 1:len.randomForest.predict ){
-    if ( my.randomForest.predict[i] == dep[i] ){
+    if ( my.randomForest.predict[i] == testing.dep[i] ){
       my.randomForest.matches <- my.randomForest.matches + 1
     }
   }
   
-  my.randomForest.matches/len.randomForest.predict
+  return(my.randomForest.matches/len.randomForest.predict)
 }
 
 multiple_runs <- function(){
-  repeats <- 7
+  repeats <- 100
   average_correct <- 0;
-  golf <- read.csv("Golf.csv")
+  original.golf <- read.csv("Golf.csv", header = T)
+  train <- 1:4
+  test <- 5
+  
   proportion_correct <-vector()
   for( i in 1:repeats){
-    proportion_correct[i] <- run_randomForest(golf[,1:6],golf[,7])
+    # Over sampling the data, so as to have increase the number of instances.
+    golf <- original.golf[sample(nrow(original.golf), 20, replace = TRUE),]
+    
+    # change the dependent variable from numeric to a class variable
+    golf$play <- factor(golf$play)
+    proportion_correct[i] <- run_randomForest(golf[,train],golf[,test])
     average_correct <- average_correct + proportion_correct[i]
   }
   
@@ -31,5 +50,8 @@ multiple_runs <- function(){
   x <- paste("Average correct over ", repeats, " runs is ",a,"%", sep="");
   print(x);
 }
+
+# For sake of reproducibility
+set.seed(141)
 
 multiple_runs()
